@@ -13,9 +13,9 @@ public class NettyEventLoopUtil {
     private EventLoopGroup defaultEventLoopGroup;
     private NettyEventLoopUtil() {
         if(Epoll.isAvailable()){
-            defaultEventLoopGroup = new EpollEventLoopGroup(0,new DaemonThreadsFactory("r2dbc-mysql-netty") );
+            defaultEventLoopGroup = new EpollEventLoopGroup(0,new DaemonThreadsFactory("r2dbc-mysql-epoll") );
         } else {
-            defaultEventLoopGroup = new NioEventLoopGroup(0,new DaemonThreadsFactory("r2dbc-mysql-netty") );
+            defaultEventLoopGroup = new NioEventLoopGroup(0,new DaemonThreadsFactory("r2dbc-mysql-nio") );
         }
     }
 
