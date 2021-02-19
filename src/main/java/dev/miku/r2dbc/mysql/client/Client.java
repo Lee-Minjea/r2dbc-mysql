@@ -22,6 +22,7 @@ import dev.miku.r2dbc.mysql.message.client.ClientMessage;
 import dev.miku.r2dbc.mysql.message.server.ServerMessage;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.SynchronousSink;
@@ -117,12 +118,14 @@ public interface Client {
      * @throws ArithmeticException      if {@code connectTimeout} milliseconds overflow as an int
      */
     static Mono<Client> connect(MySqlSslConfiguration ssl, SocketAddress address, boolean tcpKeepAlive,
-        boolean tcpNoDelay, ConnectionContext context, @Nullable Duration connectTimeout) {
+                                boolean tcpNoDelay, ConnectionContext context, @Nullable Duration connectTimeout,
+                                EventLoopGroup eventLoopGroup) {
         requireNonNull(ssl, "ssl must not be null");
         requireNonNull(address, "address must not be null");
         requireNonNull(context, "context must not be null");
 
-        TcpClient tcpClient = TcpClient.newConnection();
+        TcpClient tcpClient = TcpClient.newConnection()
+                .runOn(eventLoopGroup);
 
         if (connectTimeout != null) {
             tcpClient = tcpClient.option(ChannelOption.CONNECT_TIMEOUT_MILLIS,

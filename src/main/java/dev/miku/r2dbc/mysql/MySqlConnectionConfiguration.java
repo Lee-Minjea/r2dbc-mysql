@@ -19,6 +19,8 @@ package dev.miku.r2dbc.mysql;
 import dev.miku.r2dbc.mysql.constant.SslMode;
 import dev.miku.r2dbc.mysql.constant.ZeroDateOption;
 import dev.miku.r2dbc.mysql.extension.Extension;
+import dev.miku.r2dbc.mysql.util.NettyEventLoopUtil;
+import io.netty.channel.EventLoopGroup;
 import io.netty.handler.ssl.SslContextBuilder;
 import reactor.util.annotation.Nullable;
 
@@ -91,12 +93,14 @@ public final class MySqlConnectionConfiguration {
 
     private final Extensions extensions;
 
+    private final EventLoopGroup eventLoopGroup;
+
     private MySqlConnectionConfiguration(boolean isHost, String domain, int port, MySqlSslConfiguration ssl,
         boolean tcpKeepAlive, boolean tcpNoDelay, @Nullable Duration connectTimeout,
         ZeroDateOption zeroDateOption, @Nullable ZoneId serverZoneId, String user,
         @Nullable CharSequence password, @Nullable String database,
         @Nullable Predicate<String> preferPrepareStatement, int queryCacheSize, int prepareCacheSize,
-        Extensions extensions) {
+        Extensions extensions, @Nullable EventLoopGroup eventLoopGroup) {
         this.isHost = isHost;
         this.domain = domain;
         this.port = port;
@@ -113,6 +117,7 @@ public final class MySqlConnectionConfiguration {
         this.queryCacheSize = queryCacheSize;
         this.prepareCacheSize = prepareCacheSize;
         this.extensions = extensions;
+        this.eventLoopGroup = eventLoopGroup == null ? NettyEventLoopUtil.getDefaultEventLoopGroup() : eventLoopGroup;
     }
 
     /**
@@ -191,6 +196,8 @@ public final class MySqlConnectionConfiguration {
     Extensions getExtensions() {
         return extensions;
     }
+
+    EventLoopGroup getEventLoopGroup() { return eventLoopGroup; }
 
     @Override
     public boolean equals(Object o) {
@@ -309,6 +316,8 @@ public final class MySqlConnectionConfiguration {
 
         private final List<Extension> extensions = new ArrayList<>();
 
+        private EventLoopGroup eventLoopGroup = null;
+
         /**
          * Builds an immutable {@link MySqlConnectionConfiguration} with current options.
          *
@@ -333,7 +342,7 @@ public final class MySqlConnectionConfiguration {
             return new MySqlConnectionConfiguration(isHost, domain, port, ssl, tcpKeepAlive, tcpNoDelay,
                 connectTimeout, zeroDateOption, serverZoneId, user, password, database,
                 preferPrepareStatement, queryCacheSize, prepareCacheSize,
-                Extensions.from(extensions, autodetectExtensions));
+                Extensions.from(extensions, autodetectExtensions), eventLoopGroup);
         }
 
         /**
@@ -742,6 +751,17 @@ public final class MySqlConnectionConfiguration {
          */
         public Builder extendWith(Extension extension) {
             this.extensions.add(requireNonNull(extension, "extension must not be null"));
+            return this;
+        }
+
+        /**
+         * Configures netty eventLoopGroup that connections run on
+         *
+         * @param eventLoopGroup eventLoopGroup that connections run on
+         * @return this {@link Builder}.
+         */
+        public Builder eventLoopGroup(EventLoopGroup eventLoopGroup) {
+            this.eventLoopGroup = eventLoopGroup;
             return this;
         }
 
